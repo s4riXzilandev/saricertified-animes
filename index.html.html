@@ -1,0 +1,1099 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sarikaze Certified – Premium Anime Tracker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lz-string@1.4.4/libs/lz-string.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <meta name="theme-color" content="#000000" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: 'Inter', sans-serif; 
+      background: #000;
+      color: #fff;
+      overflow-x: hidden;
+    }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+    
+    /* Animated gradient background with cursor tracking */
+    #bg-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      opacity: 0.6;
+    }
+    
+    .content-wrapper {
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Glassmorphism cards */
+    .glass-card {
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      transition: all 0.3s ease;
+    }
+    
+    .glass-card:hover {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(139, 92, 246, 0.3);
+      transform: translateY(-2px);
+      box-shadow: 0 20px 60px rgba(139, 92, 246, 0.15);
+    }
+
+    /* Buttons */
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 12px;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 14px;
+    }
+    
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 14px;
+    }
+    
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.1);
+      color: #ef4444;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+    
+    .btn-danger:hover {
+      background: rgba(239, 68, 68, 0.2);
+      border-color: rgba(239, 68, 68, 0.5);
+    }
+
+    /* Input styles */
+    input, textarea, select {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: white;
+      padding: 12px 16px;
+      border-radius: 12px;
+      outline: none;
+      transition: all 0.3s ease;
+      font-family: 'Inter', sans-serif;
+    }
+    
+    input:focus, textarea:focus, select:focus {
+      border-color: #667eea;
+      background: rgba(255, 255, 255, 0.05);
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    input::placeholder, textarea::placeholder {
+      color: rgba(255, 255, 255, 0.3);
+    }
+
+    /* Dialog/Modal */
+    dialog {
+      background: rgba(10, 10, 10, 0.98);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      padding: 0;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(20px);
+    }
+    
+    dialog::backdrop {
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(10px);
+    }
+
+    /* Status badges */
+    .status-badge {
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .status-watching { background: rgba(34, 197, 94, 0.15); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.3); }
+    .status-planned { background: rgba(59, 130, 246, 0.15); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.3); }
+    .status-completed { background: rgba(168, 85, 247, 0.15); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.3); }
+    .status-dropped { background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
+
+    /* Animations */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .fade-in { animation: fadeIn 0.5s ease-out; }
+    
+    @keyframes shimmer {
+      0% { background-position: -1000px 0; }
+      100% { background-position: 1000px 0; }
+    }
+    
+    .shimmer {
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+      background-size: 1000px 100%;
+      animation: shimmer 2s infinite;
+    }
+
+    /* Certified badge */
+    .certified-badge {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+      color: #000;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      box-shadow: 0 4px 15px rgba(251, 191, 36, 0.3);
+    }
+
+    /* Toast notifications */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: rgba(10, 10, 10, 0.95);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 16px 20px;
+      border-radius: 12px;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      animation: slideUp 0.3s ease-out;
+    }
+    
+    @keyframes slideUp {
+      from { transform: translateY(100px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    /* Hero section */
+    .hero-title {
+      font-size: clamp(2.5rem, 8vw, 5rem);
+      font-weight: 800;
+      line-height: 1.1;
+      background: linear-gradient(135deg, #fff 0%, #667eea 50%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* Grid layout */
+    .anime-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 24px;
+    }
+
+    /* Loading state */
+    .skeleton {
+      background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.02); }
+    ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
+
+    /* Login screen */
+    .login-container {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    
+    .login-box {
+      max-width: 420px;
+      width: 100%;
+    }
+
+    /* Stats */
+    .stat-card {
+      text-align: center;
+      padding: 24px;
+    }
+    
+    .stat-number {
+      font-size: 2.5rem;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .stat-label {
+      font-size: 0.875rem;
+      color: rgba(255, 255, 255, 0.6);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Animated background canvas -->
+  <canvas id="bg-canvas"></canvas>
+
+  <!-- Main content -->
+  <div class="content-wrapper">
+    <!-- Login Screen -->
+    <div id="loginScreen" class="login-container">
+      <div class="login-box fade-in">
+        <div class="text-center mb-8">
+          <div class="text-6xl mb-4">⚡</div>
+          <h1 class="hero-title mb-4">Sarikaze Certified</h1>
+          <p class="text-gray-400 text-lg">Premium Anime Tracking Platform</p>
+        </div>
+
+        <div class="glass-card p-8">
+          <h2 class="text-2xl font-bold mb-6 text-center">Sign In</h2>
+          <form id="loginForm" class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium mb-2">Username</label>
+              <input type="text" id="loginUsername" required class="w-full" placeholder="Enter your username" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-2">Password</label>
+              <input type="password" id="loginPassword" required class="w-full" placeholder="Enter your password" />
+            </div>
+            <button type="submit" class="btn-primary w-full">Sign In</button>
+          </form>
+
+          <div class="mt-6 pt-6 border-t border-white/10">
+            <p class="text-center text-sm text-gray-400 mb-4">Don't have an account?</p>
+            <button id="showSignupBtn" class="btn-secondary w-full">Create Account</button>
+          </div>
+        </div>
+
+        <div class="mt-6 text-center text-sm text-gray-500">
+          <p class="mono">Secure • Local • No Server Required</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Signup Screen -->
+    <div id="signupScreen" class="login-container" style="display: none;">
+      <div class="login-box fade-in">
+        <div class="text-center mb-8">
+          <div class="text-6xl mb-4">⚡</div>
+          <h1 class="text-4xl font-bold mb-4">Create Account</h1>
+          <p class="text-gray-400">Join Sarikaze Certified</p>
+        </div>
+
+        <div class="glass-card p-8">
+          <form id="signupForm" class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium mb-2">Username</label>
+              <input type="text" id="signupUsername" required class="w-full" placeholder="Choose a username" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-2">Password</label>
+              <input type="password" id="signupPassword" required class="w-full" placeholder="Create a password" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-2">Confirm Password</label>
+              <input type="password" id="signupPasswordConfirm" required class="w-full" placeholder="Confirm password" />
+            </div>
+            <div class="flex items-center gap-2">
+              <input type="checkbox" id="isOwner" class="w-4 h-4" />
+              <label for="isOwner" class="text-sm">I am the owner (admin privileges)</label>
+            </div>
+            <button type="submit" class="btn-primary w-full">Create Account</button>
+          </form>
+
+          <div class="mt-6 pt-6 border-t border-white/10">
+            <button id="backToLoginBtn" class="btn-secondary w-full">Back to Sign In</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="mainApp" style="display: none;">
+      <!-- Navigation -->
+      <nav class="glass-card mx-auto max-w-7xl m-6 p-4">
+        <div class="flex items-center justify-between flex-wrap gap-4">
+          <div class="flex items-center gap-3">
+            <div class="text-3xl">⚡</div>
+            <div>
+              <h1 class="text-xl font-bold">Sarikaze Certified</h1>
+              <p class="text-xs text-gray-400 mono">v2.0 Premium</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="text-sm">
+              <span class="text-gray-400">Logged in as</span>
+              <span class="font-semibold ml-2" id="currentUser">User</span>
+              <span id="ownerBadge" class="ml-2 px-2 py-1 bg-yellow-500/20 text-yellow-400 text-xs rounded-md font-semibold" style="display: none;">OWNER</span>
+            </div>
+            <button id="logoutBtn" class="btn-secondary text-sm">Logout</button>
+          </div>
+        </div>
+      </nav>
+
+      <!-- Stats Section -->
+      <section class="max-w-7xl mx-auto px-6 mb-8">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div class="glass-card stat-card">
+            <div class="stat-number" id="totalCount">0</div>
+            <div class="stat-label">Total Anime</div>
+          </div>
+          <div class="glass-card stat-card">
+            <div class="stat-number" id="watchingCount">0</div>
+            <div class="stat-label">Watching</div>
+          </div>
+          <div class="glass-card stat-card">
+            <div class="stat-number" id="completedCount">0</div>
+            <div class="stat-label">Completed</div>
+          </div>
+          <div class="glass-card stat-card">
+            <div class="stat-number" id="certifiedCount">0</div>
+            <div class="stat-label">Certified</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Controls -->
+      <section class="max-w-7xl mx-auto px-6 mb-8">
+        <div class="glass-card p-6">
+          <div class="grid md:grid-cols-4 gap-3 mb-4">
+            <input type="text" id="search" placeholder="Search anime... (Ctrl+K)" class="md:col-span-2" />
+            <select id="statusFilter">
+              <option value="">All Status</option>
+              <option value="watching">Watching</option>
+              <option value="planned">Planned</option>
+              <option value="completed">Completed</option>
+              <option value="dropped">Dropped</option>
+            </select>
+            <select id="sortBy">
+              <option value="updatedAt:desc">Latest First</option>
+              <option value="rating:desc">Highest Rated</option>
+              <option value="title:asc">Title A-Z</option>
+            </select>
+          </div>
+
+          <div class="flex flex-wrap gap-2">
+            <button id="addBtn" class="btn-primary">+ Add Anime</button>
+            <button id="exportBtn" class="btn-secondary">Export Data</button>
+            <button id="importBtn" class="btn-secondary">Import Data</button>
+            <button id="shareLinkBtn" class="btn-secondary">Share Link</button>
+            <button id="clearBtn" class="btn-danger">Clear All</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Anime Grid -->
+      <section class="max-w-7xl mx-auto px-6 pb-20">
+        <div id="grid" class="anime-grid"></div>
+      </section>
+
+      <!-- Empty State Template -->
+      <template id="emptyTpl">
+        <div class="glass-card p-12 text-center col-span-full">
+          <div class="text-6xl mb-4">📺</div>
+          <h3 class="text-2xl font-bold mb-2">No anime yet</h3>
+          <p class="text-gray-400 mb-6">Start building your collection</p>
+          <button class="btn-primary" onclick="document.getElementById('addBtn').click()">+ Add Your First Anime</button>
+        </div>
+      </template>
+
+      <!-- Card Template -->
+      <template id="cardTpl">
+        <article class="glass-card overflow-hidden group cursor-pointer fade-in">
+          <div class="relative h-48 overflow-hidden">
+            <img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" alt="Cover" />
+            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+            <div class="certified-badge" style="display: none;">⚡ CERTIFIED</div>
+            <div class="absolute bottom-3 left-3 right-3 flex items-end justify-between">
+              <div>
+                <div class="status-badge status-watching">Watching</div>
+              </div>
+              <div class="text-right">
+                <div class="text-2xl font-bold mono rating">8.5</div>
+                <div class="text-xs text-gray-400">Rating</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="p-5">
+            <h3 class="title text-lg font-bold mb-2 line-clamp-1"></h3>
+            <p class="notes text-sm text-gray-400 mb-3 line-clamp-2"></p>
+            <div class="flex flex-wrap gap-2 mb-4 tags"></div>
+            <div class="flex items-center justify-between pt-3 border-t border-white/10">
+              <a class="watchLink text-sm text-purple-400 hover:text-purple-300 transition" target="_blank" rel="noopener"></a>
+              <div class="flex gap-2">
+                <button class="btn-secondary editBtn text-xs px-3 py-1">Edit</button>
+                <button class="btn-danger deleteBtn text-xs px-3 py-1">Delete</button>
+              </div>
+            </div>
+          </div>
+        </article>
+      </template>
+
+      <!-- Add/Edit Dialog -->
+      <dialog id="dlg">
+        <div class="p-8 w-[min(600px,90vw)]">
+          <h2 id="dlgTitle" class="text-2xl font-bold mb-6">Add Anime</h2>
+          <form id="animeForm" class="space-y-4">
+            <div class="grid md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium mb-2">Title *</label>
+                <input name="title" required class="w-full" placeholder="Anime title" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium mb-2">Cover URL</label>
+                <div class="flex gap-2">
+                  <input name="cover" class="w-full" placeholder="https://..." />
+                  <button type="button" id="autoCoverBtn" class="btn-secondary whitespace-nowrap">🔍 Auto</button>
+                </div>
+              </div>
+              <div>
+                <label class="block text-sm font-medium mb-2">Status</label>
+                <select name="status" class="w-full">
+                  <option value="watching">Watching</option>
+                  <option value="planned">Planned</option>
+                  <option value="completed">Completed</option>
+                  <option value="dropped">Dropped</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-medium mb-2">Rating (0-10)</label>
+                <input name="rating" type="number" min="0" max="10" step="0.5" value="7" class="w-full" />
+              </div>
+              <div class="md:col-span-2">
+                <label class="block text-sm font-medium mb-2">Streaming Link</label>
+                <input name="watchUrl" class="w-full" placeholder="https://crunchyroll.com/..." />
+              </div>
+              <div class="md:col-span-2">
+                <label class="block text-sm font-medium mb-2">Tags (comma separated)</label>
+                <input name="tags" class="w-full" placeholder="Action, Comedy, Isekai" />
+              </div>
+              <div class="md:col-span-2">
+                <label class="block text-sm font-medium mb-2">Notes</label>
+                <textarea name="notes" rows="3" class="w-full" placeholder="Your thoughts..."></textarea>
+              </div>
+              <div id="certRow" class="md:col-span-2" style="display: none;">
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" name="certified" class="w-4 h-4" />
+                  <span class="text-sm">Mark as <strong class="text-yellow-400">Certified</strong> (Owner only)</span>
+                </label>
+              </div>
+            </div>
+            <div class="flex justify-end gap-3 pt-4">
+              <button type="button" id="cancelBtn" class="btn-secondary">Cancel</button>
+              <button type="submit" class="btn-primary">Save Anime</button>
+            </div>
+          </form>
+        </div>
+      </dialog>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toastContainer"></div>
+
+  <script>
+    // ==================== ANIMATED BACKGROUND ====================
+    const canvas = document.getElementById('bg-canvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+    let mouseX = 0, mouseY = 0;
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    class Particle {
+      constructor() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.size = Math.random() * 2 + 1;
+        this.speedX = Math.random() * 0.5 - 0.25;
+        this.speedY = Math.random() * 0.5 - 0.25;
+      }
+
+      update() {
+        const dx = mouseX - this.x;
+        const dy = mouseY - this.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 150) {
+          this.x -= dx / dist * 2;
+          this.y -= dy / dist * 2;
+        }
+        this.x += this.speedX;
+        this.y += this.speedY;
+        if (this.x > canvas.width) this.x = 0;
+        if (this.x < 0) this.x = canvas.width;
+        if (this.y > canvas.height) this.y = 0;
+        if (this.y < 0) this.y = canvas.height;
+      }
+
+      draw() {
+        ctx.fillStyle = 'rgba(102, 126, 234, 0.5)';
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function initParticles() {
+      for (let i = 0; i < 80; i++) {
+        particles.push(new Particle());
+      }
+    }
+
+    function animateParticles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles.forEach(p => {
+        p.update();
+        p.draw();
+      });
+      
+      // Draw connections
+      particles.forEach((p1, i) => {
+        particles.slice(i + 1).forEach(p2 => {
+          const dx = p1.x - p2.x;
+          const dy = p1.y - p2.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 120) {
+            ctx.strokeStyle = `rgba(102, 126, 234, ${0.2 * (1 - dist / 120)})`;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.stroke();
+          }
+        });
+      });
+      
+      requestAnimationFrame(animateParticles);
+    }
+
+    document.addEventListener('mousemove', (e) => {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+    });
+
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+
+    initParticles();
+    animateParticles();
+
+    // ==================== TOAST SYSTEM ====================
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.innerHTML = `
+        <div class="flex items-center gap-3">
+          <div class="text-2xl">${type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ'}</div>
+          <div class="text-sm">${message}</div>
+        </div>
+      `;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(100px)';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    // ==================== AUTH SYSTEM ====================
+    const USERS_KEY = 'sarikaze:users:v1';
+    const SESSION_KEY = 'sarikaze:session:v1';
+    
+    let currentUser = null;
+
+    function hashPassword(password) {
+      // Simple hash for demo (in production, use proper crypto)
+      let hash = 0;
+      for (let i = 0; i < password.length; i++) {
+        const char = password.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash;
+      }
+      return hash.toString(36);
+    }
+
+    function getUsers() {
+      try {
+        return JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
+      } catch {
+        return [];
+      }
+    }
+
+    function saveUsers(users) {
+      localStorage.setItem(USERS_KEY, JSON.stringify(users));
+    }
+
+    function signup(username, password, isOwner) {
+      const users = getUsers();
+      if (users.find(u => u.username === username)) {
+        showToast('Username already exists!', 'error');
+        return false;
+      }
+      users.push({
+        username,
+        password: hashPassword(password),
+        isOwner,
+        createdAt: Date.now()
+      });
+      saveUsers(users);
+      showToast('Account created successfully!', 'success');
+      return true;
+    }
+
+    function login(username, password) {
+      const users = getUsers();
+      const user = users.find(u => u.username === username && u.password === hashPassword(password));
+      if (user) {
+        currentUser = { username: user.username, isOwner: user.isOwner };
+        localStorage.setItem(SESSION_KEY, JSON.stringify(currentUser));
+        showApp();
+        showToast(`Welcome back, ${username}!`, 'success');
+        return true;
+      }
+      showToast('Invalid credentials!', 'error');
+      return false;
+    }
+
+    function logout() {
+      currentUser = null;
+      localStorage.removeItem(SESSION_KEY);
+      showLogin();
+      showToast('Logged out successfully', 'info');
+    }
+
+    function checkSession() {
+      try {
+        const session = JSON.parse(localStorage.getItem(SESSION_KEY));
+        if (session) {
+          currentUser = session;
+          showApp();
+          return true;
+        }
+      } catch {}
+      showLogin();
+      return false;
+    }
+
+    function showLogin() {
+      document.getElementById('loginScreen').style.display = 'flex';
+      document.getElementById('signupScreen').style.display = 'none';
+      document.getElementById('mainApp').style.display = 'none';
+    }
+
+    function showSignup() {
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('signupScreen').style.display = 'flex';
+      document.getElementById('mainApp').style.display = 'none';
+    }
+
+    function showApp() {
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('signupScreen').style.display = 'none';
+      document.getElementById('mainApp').style.display = 'block';
+      document.getElementById('currentUser').textContent = currentUser.username;
+      document.getElementById('ownerBadge').style.display = currentUser.isOwner ? 'inline' : 'none';
+      render();
+    }
+
+    // ==================== DATA MANAGEMENT ====================
+    const STORE_KEY = 'sarikaze:animes:v5';
+    let items = [];
+    let editingId = null;
+
+    function load() {
+      try {
+        items = JSON.parse(localStorage.getItem(STORE_KEY) || '[]');
+      } catch {
+        items = [];
+      }
+    }
+
+    function save() {
+      localStorage.setItem(STORE_KEY, JSON.stringify(items));
+    }
+
+    function updateStats() {
+      document.getElementById('totalCount').textContent = items.length;
+      document.getElementById('watchingCount').textContent = items.filter(x => x.status === 'watching').length;
+      document.getElementById('completedCount').textContent = items.filter(x => x.status === 'completed').length;
+      document.getElementById('certifiedCount').textContent = items.filter(x => x.certified).length;
+    }
+
+    // ==================== RENDER ====================
+    function render() {
+      const grid = document.getElementById('grid');
+      grid.innerHTML = '';
+      
+      const q = document.getElementById('search').value.trim().toLowerCase();
+      const status = document.getElementById('statusFilter').value;
+      const [sortField, sortDir] = document.getElementById('sortBy').value.split(':');
+
+      let list = items.slice();
+      
+      if (q) {
+        list = list.filter(x =>
+          x.title.toLowerCase().includes(q) ||
+          (x.notes || '').toLowerCase().includes(q) ||
+          x.tags.some(t => t.toLowerCase().includes(q))
+        );
+      }
+      
+      if (status) list = list.filter(x => x.status === status);
+
+      list.sort((a, b) => {
+        const dir = sortDir === 'desc' ? -1 : 1;
+        if (sortField === 'title') return a.title.localeCompare(b.title) * dir;
+        if (sortField === 'rating') return (a.rating - b.rating) * dir;
+        if (sortField === 'updatedAt') return (a.updatedAt - b.updatedAt) * dir;
+        return 0;
+      });
+      
+      if (sortDir === 'desc') list.reverse();
+
+      updateStats();
+
+      if (!list.length) {
+        grid.innerHTML = document.getElementById('emptyTpl').innerHTML;
+        return;
+      }
+
+      const statusMap = {
+        watching: 'Watching',
+        planned: 'Planned',
+        completed: 'Completed',
+        dropped: 'Dropped'
+      };
+
+      list.forEach(item => {
+        const tpl = document.getElementById('cardTpl').content.cloneNode(true);
+        
+        const img = tpl.querySelector('img');
+        img.src = item.cover || `https://picsum.photos/seed/${encodeURIComponent(item.title)}/600/300`;
+        img.alt = item.title;
+        
+        tpl.querySelector('.title').textContent = item.title;
+        tpl.querySelector('.notes').textContent = item.notes || 'No notes yet';
+        tpl.querySelector('.rating').textContent = (item.rating || 0).toFixed(1);
+        
+        const statusBadge = tpl.querySelector('.status-badge');
+        statusBadge.textContent = statusMap[item.status] || item.status;
+        statusBadge.className = `status-badge status-${item.status}`;
+
+        const tags = tpl.querySelector('.tags');
+        (item.tags || []).forEach(tag => {
+          const span = document.createElement('span');
+          span.className = 'px-2 py-1 bg-white/5 rounded-md text-xs';
+          span.textContent = tag;
+          tags.appendChild(span);
+        });
+
+        if (item.certified) {
+          tpl.querySelector('.certified-badge').style.display = 'block';
+        }
+
+        const link = tpl.querySelector('.watchLink');
+        if (item.watchUrl) {
+          link.href = item.watchUrl;
+          link.textContent = '▶ Watch Now';
+          link.onclick = (e) => {
+            e.preventDefault();
+            const w = window.open(item.watchUrl, '_blank', 'noopener,noreferrer');
+            if (!w) showToast('Pop-up blocked! Please allow pop-ups.', 'error');
+          };
+        } else {
+          link.style.display = 'none';
+        }
+
+        tpl.querySelector('.editBtn').onclick = () => openDialog(item);
+        tpl.querySelector('.deleteBtn').onclick = () => removeItem(item.id);
+
+        grid.appendChild(tpl);
+      });
+    }
+
+    // ==================== DIALOG ====================
+    function openDialog(item = null) {
+      editingId = item?.id || null;
+      const dlg = document.getElementById('dlg');
+      const form = document.getElementById('animeForm');
+      
+      document.getElementById('dlgTitle').textContent = editingId ? 'Edit Anime' : 'Add Anime';
+      
+      form.reset();
+      if (item) {
+        form.title.value = item.title;
+        form.cover.value = item.cover || '';
+        form.status.value = item.status;
+        form.rating.value = item.rating || 7;
+        form.watchUrl.value = item.watchUrl || '';
+        form.tags.value = (item.tags || []).join(', ');
+        form.notes.value = item.notes || '';
+        form.certified.checked = item.certified || false;
+      }
+
+      document.getElementById('certRow').style.display = currentUser.isOwner ? 'block' : 'none';
+      
+      dlg.showModal();
+    }
+
+    function closeDialog() {
+      document.getElementById('dlg').close();
+    }
+
+    function saveAnime(formData) {
+      const rating = Math.max(0, Math.min(10, Number(formData.rating) || 0));
+      
+      const data = {
+        title: formData.title.trim(),
+        cover: formData.cover.trim() || undefined,
+        status: formData.status,
+        rating,
+        watchUrl: formData.watchUrl.trim() || undefined,
+        tags: formData.tags.split(',').map(s => s.trim()).filter(Boolean),
+        notes: formData.notes.trim() || undefined,
+        certified: currentUser.isOwner && formData.certified,
+        updatedAt: Date.now()
+      };
+
+      if (!data.title) {
+        showToast('Title is required!', 'error');
+        return;
+      }
+
+      if (editingId) {
+        const idx = items.findIndex(x => x.id === editingId);
+        if (idx > -1) {
+          items[idx] = { ...items[idx], ...data };
+          showToast('Anime updated!', 'success');
+        }
+      } else {
+        items.push({ id: crypto.randomUUID(), ...data });
+        showToast('Anime added!', 'success');
+      }
+
+      save();
+      render();
+      closeDialog();
+    }
+
+    function removeItem(id) {
+      if (!confirm('Delete this anime?')) return;
+      items = items.filter(x => x.id !== id);
+      save();
+      render();
+      showToast('Anime deleted', 'info');
+    }
+
+    // ==================== AUTO COVER ====================
+    async function fetchAutoCover() {
+      const title = document.getElementById('animeForm').title.value.trim();
+      if (!title) {
+        showToast('Enter a title first!', 'error');
+        return;
+      }
+
+      const btn = document.getElementById('autoCoverBtn');
+      btn.disabled = true;
+      btn.textContent = '⏳';
+
+      try {
+        const resp = await fetch('https://graphql.anilist.co', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            query: `query($search:String){Media(search:$search,type:ANIME){coverImage{extraLarge large}}}`,
+            variables: { search: title }
+          })
+        });
+        const data = await resp.json();
+        const img = data?.data?.Media?.coverImage?.extraLarge || data?.data?.Media?.coverImage?.large;
+        if (img) {
+          document.getElementById('animeForm').cover.value = img;
+          showToast('Cover found!', 'success');
+        } else {
+          showToast('No cover found', 'error');
+        }
+      } catch (e) {
+        showToast('Cover search failed', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '🔍 Auto';
+      }
+    }
+
+    // ==================== IMPORT/EXPORT ====================
+    function doExport() {
+      const blob = new Blob([JSON.stringify(items, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'sarikaze-backup.json';
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('Export successful!', 'success');
+    }
+
+    function doImport() {
+      const inp = document.createElement('input');
+      inp.type = 'file';
+      inp.accept = 'application/json';
+      inp.onchange = async () => {
+        const file = inp.files?.[0];
+        if (!file) return;
+        try {
+          const text = await file.text();
+          const parsed = JSON.parse(text);
+          if (!Array.isArray(parsed)) throw new Error('Invalid format');
+          items = parsed;
+          save();
+          render();
+          showToast(`Imported ${items.length} anime!`, 'success');
+        } catch (e) {
+          showToast('Import failed: ' + e.message, 'error');
+        }
+      };
+      inp.click();
+    }
+
+    function doClear() {
+      if (!confirm('Delete ALL data? Export a backup first!')) return;
+      items = [];
+      save();
+      render();
+      showToast('All data cleared', 'info');
+    }
+
+    function makeShareLink() {
+      const payload = JSON.stringify(items);
+      const packed = LZString.compressToEncodedURIComponent(payload);
+      const url = location.origin + location.pathname + '#share=' + packed;
+      navigator.clipboard.writeText(url).then(() => {
+        showToast('Share link copied!', 'success');
+      }).catch(() => {
+        prompt('Share this link:', url);
+      });
+    }
+
+    // ==================== EVENT LISTENERS ====================
+    document.getElementById('loginForm').onsubmit = (e) => {
+      e.preventDefault();
+      const username = document.getElementById('loginUsername').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      login(username, password);
+    };
+
+    document.getElementById('signupForm').onsubmit = (e) => {
+      e.preventDefault();
+      const username = document.getElementById('signupUsername').value.trim();
+      const password = document.getElementById('signupPassword').value;
+      const confirm = document.getElementById('signupPasswordConfirm').value;
+      const isOwner = document.getElementById('isOwner').checked;
+
+      if (password !== confirm) {
+        showToast('Passwords do not match!', 'error');
+        return;
+      }
+
+      if (signup(username, password, isOwner)) {
+        showLogin();
+      }
+    };
+
+    document.getElementById('showSignupBtn').onclick = showSignup;
+    document.getElementById('backToLoginBtn').onclick = showLogin;
+    document.getElementById('logoutBtn').onclick = logout;
+
+    document.getElementById('addBtn').onclick = () => openDialog();
+    document.getElementById('exportBtn').onclick = doExport;
+    document.getElementById('importBtn').onclick = doImport;
+    document.getElementById('clearBtn').onclick = doClear;
+    document.getElementById('shareLinkBtn').onclick = makeShareLink;
+
+    document.getElementById('search').oninput = render;
+    document.getElementById('statusFilter').onchange = render;
+    document.getElementById('sortBy').onchange = render;
+
+    document.getElementById('cancelBtn').onclick = closeDialog;
+    document.getElementById('autoCoverBtn').onclick = fetchAutoCover;
+
+    document.getElementById('animeForm').onsubmit = (e) => {
+      e.preventDefault();
+      const formData = {
+        title: e.target.title.value,
+        cover: e.target.cover.value,
+        status: e.target.status.value,
+        rating: e.target.rating.value,
+        watchUrl: e.target.watchUrl.value,
+        tags: e.target.tags.value,
+        notes: e.target.notes.value,
+        certified: e.target.certified.checked
+      };
+      saveAnime(formData);
+    };
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        document.getElementById('search').focus();
+      }
+      if (e.key === 'Escape' && document.getElementById('dlg').open) {
+        closeDialog();
+      }
+    });
+
+    // ==================== INIT ====================
+    load();
+    checkSession();
+  </script>
+</body>
+</html>
